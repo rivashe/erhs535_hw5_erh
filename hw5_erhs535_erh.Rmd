@@ -5,25 +5,51 @@ output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  error = FALSE,
+  fig.width = 10,
+  fig.height = 8
+)
 ```
 
-## R Markdown
+# Introduction   
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This analysis examines the spatial distribution of homicides in Baltimore, MD using data from the Washington Post's comprehensive investigation of unsolved homicides in major U.S. cities. The analysis uses the `sf` framework for spatial analysis and `tigris` to provide geographic context through census tract boundaries.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Questions of Interest:
+1. How are homicides spatially distributed across Baltimore?  
 
-```{r cars}
-summary(cars)
+2. Are there geographic differences between solved and unsolved homicides?    
+3. Do different racial groups experience homicides in different geographic areas? 
+
+# Load required packages:
+
+```{r packages}
+
+library(tidyverse)
+library(sf)
+library(tigris)
+library(forcats)
+library(viridis)
+library(scales)
+
 ```
 
-## Including Plots
+# Data Loading and Preparation
 
-You can also embed plots, for example:
+## Read Homicide Data
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r load-data}
+
+# Read the Washington Post homicide data
+homicides <- read_csv("data/homicide-data.csv")
+
+# Display structure
+glimpse(homicides)
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
