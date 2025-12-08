@@ -51,5 +51,34 @@ homicides <- read_csv("data/homicide-data.csv")
 glimpse(homicides)
 
 ```
+## Filter to Baltimore and Prepare Variables
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r prepare-baltimore-data}
+# Filter to Baltimore, MD
+baltimore <- homicides %>%
+  filter(city == "Baltimore", state == "MD") %>%
+  # Create solved/unsolved variable
+  mutate(
+    case_status = case_when(
+      disposition == "Closed by arrest" ~ "Solved",
+      disposition %in% c("Closed without arrest", "Open/No arrest") ~ "Unsolved"
+    ),
+    # Clean race variable
+    victim_race = str_to_title(victim_race),
+    victim_race = case_when(
+      victim_race == "Unknown" ~ NA_character_,
+      TRUE ~ victim_race
+    )
+  ) %>%
+  # Remove cases with missing coordinates or race
+  filter(!is.na(lat), !is.na(lon), !is.na(victim_race))
+
+# Display summary
+cat("Total homicides in Baltimore:", nrow(baltimore), "\n")
+cat("Solved:", sum(baltimore$case_status == "Solved"), "\n")
+cat("Unsolved:", sum(baltimore$case_status == "Unsolved"), "\n")
+```
+
+
+
+
