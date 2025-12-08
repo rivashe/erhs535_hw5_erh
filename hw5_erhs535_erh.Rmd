@@ -79,6 +79,25 @@ cat("Solved:", sum(baltimore$case_status == "Solved"), "\n")
 cat("Unsolved:", sum(baltimore$case_status == "Unsolved"), "\n")
 ```
 
+## Identify Top 3 Race Groups
 
+```{r top-races}
+# Count homicides by race
+race_counts <- baltimore %>%
+  count(victim_race, sort = TRUE)
+
+print(race_counts)
+
+# Use fct_lump to keep top 3 races
+baltimore <- baltimore %>%
+  mutate(
+    victim_race_grouped = fct_lump(victim_race, n = 3, other_level = "Other")
+  )
+
+# Display grouped race distribution
+baltimore %>%
+  count(victim_race_grouped, sort = TRUE) %>%
+  knitr::kable(caption = "Distribution of Homicides by Race Group")
+```
 
 
