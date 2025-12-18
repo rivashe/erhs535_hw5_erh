@@ -86,7 +86,7 @@ Place in data/ directory
 **Racial Categories:** Census categories may not reflect individual identity
 **Temporal Aggregation:** Analysis pools 10 years of data, masking temporal trends
 
-# References
+# References    
 
 The Washington Post. (2018). "Murder with Impunity: Where killings go unsolved."
 Article Link
@@ -97,7 +97,7 @@ Pebesma, E. (2018). Simple Features for R: Standardized Support for Spatial Vect
 The R Journal, 10(1), 439-446.
 
 
-#License
+# License    
 This project is submitted as coursework for ERHS 535 at Colorado State University. 
 The underlying homicide data is provided by The Washington Post and is subject to their terms of use.
 
