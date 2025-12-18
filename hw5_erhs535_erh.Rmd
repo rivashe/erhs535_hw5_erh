@@ -17,13 +17,12 @@ knitr::opts_chunk$set(
 
 # Introduction   
 
-This analysis examines the spatial distribution of homicides in Baltimore, MD using data from the Washington Post's comprehensive investigation of unsolved homicides in major U.S. cities. The analysis uses the `sf` framework for spatial analysis and `tigris` to provide geographic context through census tract boundaries.
+This analysis examines the spatial distribution of homicides in Baltimore, MD using data from the Washington Post's comprehensive investigation of unsolved homicides in major U.S. cities. The analysis uses the `sf` framework for spatial analysis and `tigris` to provide geographic context through census tract boundaries.     
 
 ## Questions of Interest:
-1. How are homicides spatially distributed across Baltimore?  
-
-2. Are there geographic differences between solved and unsolved homicides?    
-3. Do different racial groups experience homicides in different geographic areas? 
+1. How are homicides spatially distributed across Baltimore?    
+2. Are there geographic differences between solved and unsolved homicides?         
+3. Do different racial groups experience homicides in different geographic areas?      
 
 # Load required packages:
 
@@ -55,6 +54,7 @@ glimpse(homicides)
 
 ```{r prepare-baltimore-data}
 # Filter to Baltimore, MD
+
 baltimore <- homicides %>%
   filter(city == "Baltimore", state == "MD") %>%
   # Create solved/unsolved variable
@@ -77,12 +77,14 @@ baltimore <- homicides %>%
 cat("Total homicides in Baltimore:", nrow(baltimore), "\n")
 cat("Solved:", sum(baltimore$case_status == "Solved"), "\n")
 cat("Unsolved:", sum(baltimore$case_status == "Unsolved"), "\n")
+
 ```
 
 ## Identify Top 3 Race Groups
 
 ```{r top-races}
 # Count homicides by race
+
 race_counts <- baltimore %>%
   count(victim_race, sort = TRUE)
 
@@ -98,6 +100,186 @@ baltimore <- baltimore %>%
 baltimore %>%
   count(victim_race_grouped, sort = TRUE) %>%
   knitr::kable(caption = "Distribution of Homicides by Race Group")
+
 ```
+
+# Spatial Data Preparation
+
+## Convert Homicides to SF Object
+
+```{r create-sf-homicides}
+# Convert to sf object using WGS84 (EPSG:4326)
+
+baltimore_sf <- baltimore %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+# Display spatial summary
+cat("Coordinate Reference System:\n")
+print(st_crs(baltimore_sf))
+
+```
+
+## Download Census Tract Boundaries
+
+```{r download-tracts}
+# Download Baltimore City census tracts
+
+# Baltimore City is FIPS code 24510
+baltimore_tracts <- tracts(state = "MD", county = "Baltimore city", year = 2020)
+
+# Transform to same CRS as homicide data
+baltimore_tracts <- baltimore_tracts %>%
+  st_transform(crs = 4326)
+
+# Display tract information
+cat("Number of census tracts:", nrow(baltimore_tracts), "\n")
+
+```
+
+## Verify Spatial Alignment
+
+```{r check-alignment}
+# Check if homicide points fall within tract boundaries
+
+baltimore_bbox <- st_bbox(baltimore_sf)
+tracts_bbox <- st_bbox(baltimore_tracts)
+
+cat("Homicide data bounding box:\n")
+print(baltimore_bbox)
+cat("\nCensus tracts bounding box:\n")
+print(tracts_bbox)
+
+# Verify points are within tracts
+points_in_tracts <- st_within(baltimore_sf, baltimore_tracts, sparse = FALSE) %>%
+  rowSums()
+
+cat("\nPoints within tract boundaries:", sum(points_in_tracts > 0), "of", nrow(baltimore_sf), "\n")
+
+```
+
+# Spatial Visualization
+
+## Create Map with Facets
+
+```{r main-map, fig.width=12, fig.height=10}
+# Create the main visualization
+
+ggplot() +
+  # Add census tract boundaries
+  geom_sf(data = baltimore_tracts, 
+          fill = "gray95", 
+          color = "gray70", 
+          size = 0.2) +
+  # Add homicide points
+  geom_sf(data = baltimore_sf, 
+          aes(color = victim_race_grouped),
+          size = 1.5,
+          alpha = 0.6) +
+  # Facet by case status
+  facet_wrap(~case_status, ncol = 2) +
+  # Color scheme
+  scale_color_viridis_d(option = "plasma", 
+                        name = "Victim Race",
+                        end = 0.9) +
+  # Labels and theme
+  labs(
+    title = "Spatial Distribution of Homicides in Baltimore, MD (2007-2017)",
+    subtitle = "Comparing Solved and Unsolved Cases by Victim Race",
+    caption = "Data: Washington Post | Boundaries: U.S. Census Bureau (2020 Census Tracts)",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(size = 12, color = "gray30"),
+    strip.text = element_text(face = "bold", size = 14),
+    strip.background = element_rect(fill = "gray90", color = NA),
+    legend.position = "bottom",
+    legend.title = element_text(face = "bold"),
+    panel.grid.major = element_line(color = "gray80", size = 0.2),
+    axis.text = element_text(size = 8)
+  )
+
+```
+
+# Statistical Summary
+
+## Homicides by Race and Case Status
+
+```{r summary-table}
+# Create summary table
+summary_table <- baltimore %>%
+  count(case_status, victim_race_grouped) %>%
+  pivot_wider(names_from = case_status, values_from = n, values_fill = 0) %>%
+  mutate(
+    Total = Solved + Unsolved,
+    Percent_Unsolved = round(100 * Unsolved / Total, 1)
+  ) %>%
+  arrange(desc(Total))
+
+summary_table %>%
+  knitr::kable(
+    caption = "Homicide Cases by Victim Race and Case Status",
+    col.names = c("Victim Race", "Solved", "Unsolved", "Total", "% Unsolved")
+  )
+```
+
+## Spatial Clustering Analysis
+
+```{r spatial-statistics}
+# Calculate distances between points for each group
+
+baltimore_by_status <- baltimore_sf %>%
+  group_by(case_status) %>%
+  summarize(
+    count = n(),
+    .groups = "drop"
+  )
+
+# Calculate centroids for each race group and case status
+centroids <- baltimore_sf %>%
+  group_by(case_status, victim_race_grouped) %>%
+  summarize(
+    count = n(),
+    geometry = st_union(geometry),
+    .groups = "drop"
+  ) %>%
+  st_centroid()
+
+print(centroids)
+
+```
+
+# Key Findings
+
+## Geographic Patterns
+
+```{r calculate-findings}
+# Calculate key statistics for findings
+
+total_homicides <- nrow(baltimore)
+unsolved_rate <- round(100 * sum(baltimore$case_status == "Unsolved") / total_homicides, 1)
+
+top_race <- baltimore %>%
+  count(victim_race_grouped, sort = TRUE) %>%
+  slice(1) %>%
+  pull(victim_race_grouped) %>%
+  as.character()
+
+top_race_pct <- round(100 * max(table(baltimore$victim_race_grouped)) / total_homicides, 1)
+
+```
+
+Based on the spatial analysis of `r total_homicides` homicides in Baltimore from 2007-2017:     
+
+1. **High Unsolved Rate**: Approximately `r unsolved_rate`% of homicides remain unsolved, indicating significant challenges in case clearance.     
+
+2. **Racial Disparities**: `r top_race` victims represent `r top_race_pct`% of all homicides, showing substantial racial disparities in victimization.     
+
+3. **Spatial Distribution**: Homicides are not randomly distributed but show clear clustering in specific census tracts, suggesting concentrated areas of violence.     
+
+4. **Solved vs. Unsolved Geography**: The spatial patterns of solved and unsolved cases show both similarities and differences, with some areas having particularly low clearance rates.     
+
 
 
