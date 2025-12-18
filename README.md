@@ -89,13 +89,13 @@ Place in data/ directory
 
 # References    
 
-The Washington Post. (2018). "Murder with Impunity: Where killings go unsolved."
-Article Link
-U.S. Census Bureau. (2020). TIGER/Line Shapefiles.
-Census Geographic Data
-Walker, K. (2023). tigris: Load Census TIGER/Line Shapefiles. R package version 2.0.4.
-Pebesma, E. (2018). Simple Features for R: Standardized Support for Spatial Vector Data.
-The R Journal, 10(1), 439-446.
+- Lowery, W., Kelly, K., Mellnik, T., & Rich, S. (2018, June 6). Murder with impunity: Where killings go unsolved. The Washington Post. https://www.washingtonpost.com/graphics/2018/investigations/where-murders-go-unsolved/    
+
+- Pebesma, E. (2018). Simple features for R: Standardized support for spatial vector data. The R Journal, 10(1), 439–446. https://doi.org/10.32614/RJ-2018-009    
+
+- U.S. Census Bureau. (2020). TIGER/Line shapefiles [Data set]. U.S. Department of Commerce. https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html    
+
+- Walker, K. (2023). tigris: Load Census TIGER/Line shapefiles (R package version 2.0.4) [Computer software]. CRAN. https://CRAN.R-project.org/package=tigris    
 
 
 # License    
